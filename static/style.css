@@ -1,8 +1,7 @@
-/* General Body and Container Styles */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #121212; /* Dark background */
-    color: #e0e0e0; /* Light text */
+    background-color: #121212;
+    color: #e0e0e0;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -12,10 +11,10 @@ body {
 }
 
 .calculator-container {
-    background-color: #1e1e1e; /* Darker container background */
+    background-color: #1e1e1e;
     padding: 30px;
     border-radius: 12px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5); /* Stronger shadow for depth */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
     width: 100%;
     max-width: 500px;
     text-align: center;
@@ -27,20 +26,19 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Header and Navigation */
 h1 {
-    color: #4CAF50; /* A vibrant green for headings */
+    color: #4CAF50;
     margin-bottom: 10px;
 }
 
 a {
-    color: #2196F3; /* A bright blue for links */
+    color: #2196F3;
     text-decoration: none;
     transition: color 0.3s ease;
 }
 
 a:hover {
-    color: #64B5F6; /* Lighter blue on hover */
+    color: #64B5F6;
 }
 
 hr {
@@ -50,7 +48,6 @@ hr {
     margin: 20px 0;
 }
 
-/* Tab and Unit Toggles */
 .tabs {
     display: flex;
     justify-content: space-around;
@@ -97,7 +94,6 @@ hr {
     color: #fff;
 }
 
-/* Form Styles */
 form {
     display: flex;
     flex-direction: column;
@@ -116,6 +112,7 @@ label {
     color: #ccc;
 }
 
+input[type="text"],
 input[type="number"],
 select {
     padding: 12px;
@@ -144,7 +141,6 @@ button[type="submit"]:hover {
     background-color: #45a049;
 }
 
-/* Result and Feedback */
 .result-container {
     margin-top: 25px;
     padding: 20px;
@@ -177,7 +173,6 @@ button[type="submit"]:hover {
     margin-top: 10px;
 }
 
-/* Loading Spinner */
 .loading-spinner {
     border: 4px solid #f3f3f3;
     border-top: 4px solid #4CAF50;
@@ -192,7 +187,6 @@ button[type="submit"]:hover {
     100% { transform: rotate(360deg); }
 }
 
-/* Macronutrient Sliders and Chart */
 .slider-group {
     display: flex;
     align-items: center;
@@ -202,7 +196,7 @@ button[type="submit"]:hover {
 .slider-group label {
     flex: 1;
     margin-right: 15px;
-    white-space: nowrap; /* Prevents text from wrapping */
+    white-space: nowrap;
 }
 
 .slider-group input[type="range"] {
@@ -253,7 +247,6 @@ button[type="submit"]:hover {
     box-shadow: inset 0 0 5px rgba(0,0,0,0.3);
 }
 
-/* Flashed Messages */
 .flashes {
     margin-bottom: 20px;
     text-align: center;
@@ -269,7 +262,6 @@ button[type="submit"]:hover {
 .alert-danger { background-color: #d32f2f; color: #ffcdd2; border-color: #e57373; }
 .alert-info { background-color: #1976d2; color: #bbdefb; border-color: #42a5f5; }
 
-/* Profile Page */
 .data-history-list {
     list-style-type: none;
     padding: 0;

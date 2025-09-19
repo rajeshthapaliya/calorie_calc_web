@@ -4,12 +4,15 @@ from flask_login import UserMixin, login_user, LoginManager, login_required, log
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import InputRequired, Length, ValidationError
+from flask_migrate import Migrate
 from datetime import datetime
+from sqlalchemy import func
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SECRET_KEY'] = 'thisisasecretkey'
 db = SQLAlchemy(app)
+migrate = Migrate(app, db) # This line initializes Flask-Migrate
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -24,6 +27,8 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(20), nullable=False, unique=True)
     password = db.Column(db.String(80), nullable=False)
     health_data = db.relationship('UserHealthData', backref='owner', lazy=True)
+    food_entries = db.relationship('FoodEntry', backref='owner', lazy=True)
+    exercise_entries = db.relationship('ExerciseEntry', backref='owner', lazy=True)
 
 class UserHealthData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -34,6 +39,24 @@ class UserHealthData(db.Model):
     carb_grams = db.Column(db.Float, nullable=True)
     fat_grams = db.Column(db.Float, nullable=True)
     date_created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+class FoodEntry(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    food_name = db.Column(db.String(100), nullable=False)
+    calories = db.Column(db.Integer, nullable=False)
+    protein = db.Column(db.Float, nullable=True)
+    carbs = db.Column(db.Float, nullable=True)
+    fats = db.Column(db.Float, nullable=True)
+    date_created = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+class ExerciseEntry(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    exercise_name = db.Column(db.String(100), nullable=False)
+    duration_minutes = db.Column(db.Integer, nullable=True)
+    calories_burned = db.Column(db.Integer, nullable=False)
+    date_created = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 class RegisterForm(FlaskForm):
@@ -61,7 +84,7 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if user:
-            if user.password == form.password.data: # In a real app, use a secure password hash
+            if user.password == form.password.data:
                 login_user(user)
                 flash('Login successful!', 'success')
                 return redirect(url_for('home'))
@@ -75,7 +98,7 @@ def login():
 def register():
     form = RegisterForm()
     if form.validate_on_submit():
-        new_user = User(username=form.username.data, password=form.password.data) # Use hashed passwords in production
+        new_user = User(username=form.username.data, password=form.password.data)
         db.session.add(new_user)
         db.session.commit()
         flash('Registration successful! You can now log in.', 'success')
@@ -118,15 +141,9 @@ def calculate_calories():
         bmr = 447.593 + (9.247 * weight_kg) + (3.098 * height_cm) - (4.330 * age)
     tdee = bmr * activity_level
     
-    # Store TDEE in the database
-    user_data = UserHealthData.query.filter_by(user_id=current_user.id).order_by(UserHealthData.date_created.desc()).first()
-    if user_data:
-        user_data.tdee = round(tdee, 2)
-        db.session.commit()
-    else:
-        new_data = UserHealthData(tdee=round(tdee, 2), owner=current_user)
-        db.session.add(new_data)
-        db.session.commit()
+    user_data = UserHealthData(tdee=round(tdee, 2), owner=current_user)
+    db.session.add(user_data)
+    db.session.commit()
     
     return jsonify({
         'tdee': round(tdee, 2),
@@ -150,15 +167,9 @@ def calculate_bmi():
     if height_m <= 0: return jsonify({'error': 'Height cannot be zero or negative'}), 400
     bmi = weight_kg / (height_m ** 2)
     
-    # Store BMI in the database
-    user_data = UserHealthData.query.filter_by(user_id=current_user.id).order_by(UserHealthData.date_created.desc()).first()
-    if user_data:
-        user_data.bmi = round(bmi, 2)
-        db.session.commit()
-    else:
-        new_data = UserHealthData(bmi=round(bmi, 2), owner=current_user)
-        db.session.add(new_data)
-        db.session.commit()
+    user_data = UserHealthData(bmi=round(bmi, 2), owner=current_user)
+    db.session.add(user_data)
+    db.session.commit()
     
     category = "Unknown"
     if bmi < 18.5: category = "Underweight"
@@ -180,15 +191,9 @@ def calculate_calories_burned():
 
     calories_burned = (met_value * 3.5 * weight_kg) / 200 * duration_minutes
     
-    # Store calories burned in the database
-    user_data = UserHealthData.query.filter_by(user_id=current_user.id).order_by(UserHealthData.date_created.desc()).first()
-    if user_data:
-        user_data.calories_burned = round(calories_burned, 2)
-        db.session.commit()
-    else:
-        new_data = UserHealthData(calories_burned=round(calories_burned, 2), owner=current_user)
-        db.session.add(new_data)
-        db.session.commit()
+    user_data = UserHealthData(calories_burned=round(calories_burned, 2), owner=current_user)
+    db.session.add(user_data)
+    db.session.commit()
     
     return jsonify({'calories_burned': round(calories_burned, 2)})
 
@@ -214,17 +219,14 @@ def calculate_macros():
     carb_grams = carb_calories / 4
     fat_grams = fat_calories / 9
     
-    # Store macro data in the database
-    user_data = UserHealthData.query.filter_by(user_id=current_user.id).order_by(UserHealthData.date_created.desc()).first()
-    if user_data:
-        user_data.protein_grams = round(protein_grams, 1)
-        user_data.carb_grams = round(carb_grams, 1)
-        user_data.fat_grams = round(fat_grams, 1)
-        db.session.commit()
-    else:
-        new_data = UserHealthData(protein_grams=round(protein_grams, 1), carb_grams=round(carb_grams, 1), fat_grams=round(fat_grams, 1), owner=current_user)
-        db.session.add(new_data)
-        db.session.commit()
+    user_data = UserHealthData(
+        protein_grams=round(protein_grams, 1),
+        carb_grams=round(carb_grams, 1),
+        fat_grams=round(fat_grams, 1),
+        owner=current_user
+    )
+    db.session.add(user_data)
+    db.session.commit()
 
     return jsonify({
         'protein_grams': round(protein_grams, 1),
@@ -232,7 +234,93 @@ def calculate_macros():
         'fat_grams': round(fat_grams, 1)
     })
 
+@app.route('/food_log', methods=['GET', 'POST'])
+@login_required
+def food_log():
+    if request.method == 'POST':
+        food_name = request.form.get('food_name')
+        calories = request.form.get('calories')
+        protein = request.form.get('protein')
+        carbs = request.form.get('carbs')
+        fats = request.form.get('fats')
+
+        if not food_name or not calories:
+            flash('Food name and calories are required!', 'danger')
+            return redirect(url_for('food_log'))
+
+        new_entry = FoodEntry(
+            food_name=food_name,
+            calories=calories,
+            protein=protein,
+            carbs=carbs,
+            fats=fats,
+            user_id=current_user.id
+        )
+        db.session.add(new_entry)
+        db.session.commit()
+        flash('Food entry added successfully!', 'success')
+        return redirect(url_for('food_log'))
+
+    today = datetime.utcnow().date()
+    today_entries = FoodEntry.query.filter(
+        FoodEntry.user_id == current_user.id,
+        func.date(FoodEntry.date_created) == today
+    ).order_by(FoodEntry.date_created.desc()).all()
+
+    total_calories = sum(entry.calories for entry in today_entries)
+    total_protein = sum(entry.protein or 0 for entry in today_entries)
+    total_carbs = sum(entry.carbs or 0 for entry in today_entries)
+    total_fats = sum(entry.fats or 0 for entry in today_entries)
+
+    return render_template(
+        'food_log.html',
+        entries=today_entries,
+        total_calories=total_calories,
+        total_protein=total_protein,
+        total_carbs=total_carbs,
+        total_fats=total_fats
+    )
+
+@app.route('/exercise_log', methods=['GET', 'POST'])
+@login_required
+def exercise_log():
+    if request.method == 'POST':
+        exercise_name = request.form.get('exercise_name')
+        duration = request.form.get('duration')
+        calories_burned = request.form.get('calories_burned')
+        
+        if not exercise_name or not calories_burned:
+            flash('Exercise name and calories are required!', 'danger')
+            return redirect(url_for('exercise_log'))
+
+        new_entry = ExerciseEntry(
+            exercise_name=exercise_name,
+            duration_minutes=duration,
+            calories_burned=calories_burned,
+            user_id=current_user.id
+        )
+        db.session.add(new_entry)
+        db.session.commit()
+        flash('Exercise entry added successfully!', 'success')
+        return redirect(url_for('exercise_log'))
+
+    today = datetime.utcnow().date()
+    today_entries = ExerciseEntry.query.filter(
+        ExerciseEntry.user_id == current_user.id,
+        func.date(ExerciseEntry.date_created) == today
+    ).order_by(ExerciseEntry.date_created.desc()).all()
+
+    total_calories_burned = sum(entry.calories_burned for entry in today_entries)
+
+    return render_template(
+        'exercise_log.html',
+        entries=today_entries,
+        total_calories_burned=total_calories_burned
+    )
+
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()
+        # This is commented out to use Flask-Migrate instead
+        # db.create_all()
+        pass
     app.run(debug=True)

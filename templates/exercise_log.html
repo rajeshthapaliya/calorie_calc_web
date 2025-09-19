@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise Log</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="calculator-container">
+        <h1>Daily Exercise Log</h1>
+        <a href="{{ url_for('home') }}">Go to Calculators</a> | <a href="{{ url_for('profile') }}">Profile</a> | <a href="{{ url_for('food_log') }}">Food Log</a> | <a href="{{ url_for('logout') }}">Logout</a>
+        <hr>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flashes">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <div class="input-group">
+                <label for="exercise_name">Exercise:</label>
+                <input type="text" id="exercise_name" name="exercise_name" required>
+            </div>
+            <div class="input-group">
+                <label for="duration">Duration (minutes):</label>
+                <input type="number" id="duration" name="duration">
+            </div>
+            <div class="input-group">
+                <label for="calories_burned">Calories Burned (kcal):</label>
+                <input type="number" id="calories_burned" name="calories_burned" required>
+            </div>
+            <button type="submit">Add Exercise</button>
+        </form>
+
+        <hr>
+
+        <h2>Today's Summary</h2>
+        <div class="result-container">
+            <p>Total Calories Burned: <span class="tdee-value">{{ total_calories_burned }}</span> kcal</p>
+        </div>
+
+        <h3>Today's Entries</h3>
+        <ul class="data-history-list">
+            {% for entry in entries %}
+            <li class="history-item">
+                <span class="history-date">{{ entry.date_created.strftime('%I:%M %p') }}</span>
+                <p><strong>{{ entry.exercise_name }}</strong></p>
+                <p>Duration: {{ entry.duration_minutes or 'N/A' }} min | Calories Burned: {{ entry.calories_burned }} kcal</p>
+            </li>
+            {% else %}
+            <p>No exercise entries for today yet.</p>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

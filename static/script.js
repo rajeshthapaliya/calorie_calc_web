@@ -15,7 +15,6 @@ function openTab(evt, tabName) {
     document.getElementById(tabName).style.display = "block";
     evt.currentTarget.className += " active";
 
-    // Load saved user data when a tab is opened
     const savedWeight = localStorage.getItem('userWeight');
     const savedHeight = localStorage.getItem('userHeight');
     const savedAge = localStorage.getItem('userAge');
@@ -25,14 +24,12 @@ function openTab(evt, tabName) {
     if (savedGender && tabName === 'calorie') { document.getElementById('gender').value = savedGender; }
     if (savedWeight) { document.getElementById('weight').value = savedWeight; document.getElementById('bmi-weight').value = savedWeight; document.getElementById('burned-weight').value = savedWeight; }
     if (savedHeight) { document.getElementById('height').value = savedHeight; document.getElementById('bmi-height').value = savedHeight; }
-    // Check if the macro tab is opened and a TDEE value exists
     if (tabName === 'macro') {
         const tdee = localStorage.getItem('tdeeValue');
         if (tdee) {
             document.getElementById('tdee-input').value = tdee;
-            document.getElementById('tdee-input').placeholder = ''; // Clear placeholder if value is set
+            document.getElementById('tdee-input').placeholder = '';
         }
-        // Initial update for sliders when tab is opened
         updateMacroRatios(null);
     }
 }
@@ -63,7 +60,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
     });
 });
 
-// A general function to handle fetch errors
 function handleFetchResponse(response) {
     if (response.status === 401) {
         throw new Error("You must be logged in to use this feature.");
@@ -71,7 +67,6 @@ function handleFetchResponse(response) {
     return response.json();
 }
 
-// A general function for client-side validation
 function validateForm(formId) {
     const form = document.getElementById(formId);
     const inputs = form.querySelectorAll('input[required], select[required]');
@@ -83,7 +78,6 @@ function validateForm(formId) {
     return true;
 }
 
-// Function to update macro ratios and ensure they total 100%
 function updateMacroRatios(changedSlider) {
     const proteinSlider = document.getElementById('protein-ratio');
     const carbSlider = document.getElementById('carb-ratio');
@@ -93,7 +87,6 @@ function updateMacroRatios(changedSlider) {
     let carb = parseInt(carbSlider.value);
     let fat = parseInt(fatSlider.value);
 
-    // Get a live reference to the spans to update them
     document.getElementById('protein-value').textContent = protein + '%';
     document.getElementById('carb-value').textContent = carb + '%';
     document.getElementById('fat-value').textContent = fat + '%';
@@ -139,11 +132,9 @@ function updateMacroRatios(changedSlider) {
             }
         }
     } else {
-        // Initial load logic to ensure 100%
         const total = protein + carb + fat;
         if (total !== 100) {
             const diff = total - 100;
-            // A simple adjustment, can be more complex
             if (diff > 0) {
                 if (fat > 10) fat -= diff;
                 else if (carb > 10) carb -= diff;
@@ -156,7 +147,6 @@ function updateMacroRatios(changedSlider) {
         }
     }
 
-    // Set the corrected values
     proteinSlider.value = protein;
     carbSlider.value = carb;
     fatSlider.value = fat;
@@ -165,7 +155,6 @@ function updateMacroRatios(changedSlider) {
     document.getElementById('fat-value').textContent = fat + '%';
 }
 
-// Calorie calculator logic (Modified to use handleFetchResponse)
 document.getElementById('calorie-form').addEventListener('submit', function(e) {
     e.preventDefault();
     if (!validateForm('calorie-form')) return;
@@ -198,7 +187,6 @@ document.getElementById('calorie-form').addEventListener('submit', function(e) {
 
         resultDiv.innerHTML = `<p>Your estimated daily calorie needs (TDEE) are:</p><p class="tdee-value">${tdee} kcal</p><p class="feedback-text">${feedback}</p>`;
 
-        // Save the TDEE value and user inputs to localStorage for persistence
         localStorage.setItem('tdeeValue', tdee);
         localStorage.setItem('userAge', age);
         localStorage.setItem('userGender', gender);
@@ -213,7 +201,6 @@ document.getElementById('calorie-form').addEventListener('submit', function(e) {
     });
 });
 
-// BMI calculator logic (Modified to use handleFetchResponse)
 document.getElementById('bmi-form').addEventListener('submit', function(e) {
     e.preventDefault();
     if (!validateForm('bmi-form')) return;
@@ -245,7 +232,6 @@ document.getElementById('bmi-form').addEventListener('submit', function(e) {
 
         resultDiv.innerHTML = `<p>Your BMI is:</p><p class="tdee-value">${data.bmi}</p><p class="bmi-category ${categoryClass}">${data.category}</p><p class="feedback-text">${advice}</p>`;
         
-        // Destroy the old chart if it exists
         if (myBmiChart) {
             myBmiChart.destroy();
         }
@@ -277,7 +263,6 @@ document.getElementById('bmi-form').addEventListener('submit', function(e) {
     });
 });
 
-// Calories Burned calculator logic (updated with separate fields)
 document.getElementById('burned-form').addEventListener('submit', function(e) {
     e.preventDefault();
     if (!validateForm('burned-form')) return;
@@ -309,7 +294,6 @@ document.getElementById('burned-form').addEventListener('submit', function(e) {
     });
 });
 
-// Macro calculator logic (Modified to get values from sliders and use chart.js)
 document.getElementById('macro-form').addEventListener('submit', function(e) {
     e.preventDefault();
     if (!validateForm('macro-form')) return;
@@ -321,7 +305,6 @@ document.getElementById('macro-form').addEventListener('submit', function(e) {
     const totalRatio = proteinRatio + carbRatio + fatRatio;
     const resultDiv = document.getElementById('macro-result');
 
-    // The updateMacroRatios function handles the total, so this check is mostly for sanity
     if (Math.abs(totalRatio - 100) > 0.1) {
         resultDiv.innerHTML = `<div class="error-message"><p><strong>Error:</strong> Ratios must total 100% (currently ${totalRatio.toFixed(1)}%)</p></div>`;
         return;
@@ -342,7 +325,6 @@ document.getElementById('macro-form').addEventListener('submit', function(e) {
             <p><strong>Fats:</strong> ${data.fat_grams}g</p>
         `;
 
-        // Check if a chart instance already exists and destroy it
         if (myMacroChart) {
             myMacroChart.destroy();
         }
