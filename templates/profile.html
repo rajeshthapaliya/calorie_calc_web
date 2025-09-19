@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="calculator-container">
+        <h1>Welcome, {{ user.username }}!</h1>
+        <a href="{{ url_for('home') }}">Go to Calculators</a> | <a href="{{ url_for('logout') }}">Logout</a>
+        <hr>
+        <h2>Your Health Data History</h2>
+        {% if history %}
+        <div class="chart-container">
+            <canvas id="bmiHistoryChart"></canvas>
+        </div>
+        <ul class="data-history-list">
+            {% for entry in history %}
+            <li class="history-item">
+                <span class="history-date">{{ entry.date_created.strftime('%Y-%m-%d %H:%M') }}</span>
+                {% if entry.tdee %} <p><strong>TDEE:</strong> {{ entry.tdee }} kcal</p> {% endif %}
+                {% if entry.bmi %} <p><strong>BMI:</strong> {{ entry.bmi }}</p> {% endif %}
+                {% if entry.calories_burned %} <p><strong>Calories Burned:</strong> {{ entry.calories_burned }} kcal</p> {% endif %}
+                {% if entry.protein_grams or entry.carb_grams or entry.fat_grams %}
+                <p><strong>Macros:</strong> {{ entry.protein_grams or 'N/A' }}g P / {{ entry.carb_grams or 'N/A' }}g C / {{ entry.fat_grams or 'N/A' }}g F</p>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>No health data found. Please use the calculators to save your first entry.</p>
+        {% endif %}
+    </div>
+    <script>
+        // Prepare data for the BMI history chart
+        const history = {{ history | tojson | default([]) }};
+        const bmiLabels = history.filter(d => d.bmi !== null).map(d => new Date(d.date_created).toLocaleDateString());
+        const bmiData = history.filter(d => d.bmi !== null).map(d => d.bmi);
+
+        if (bmiData.length > 0) {
+            const ctx = document.getElementById('bmiHistoryChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: bmiLabels,
+                    datasets: [{
+                        label: 'BMI Trend',
+                        data: bmiData,
+                        borderColor: 'rgba(0, 123, 255, 1)',
+                        backgroundColor: 'rgba(0, 123, 255, 0.2)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'BMI'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Your BMI Trend Over Time'
+                        },
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

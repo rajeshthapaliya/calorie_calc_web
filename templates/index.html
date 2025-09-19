@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Calculators</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="calculator-container">
+        <h1>Health Calculators</h1>
+        <a href="{{ url_for('profile') }}">Profile</a> | <a href="{{ url_for('logout') }}">Logout</a>
+        <hr>
+        <div class="tabs">
+            <div class="unit-toggle">
+                <button class="unit-button active" id="metric-btn">Metric (kg/cm)</button>
+                <button class="unit-button" id="imperial-btn">Imperial (lbs/in)</button>
+            </div>
+            <button class="tab-button active" onclick="openTab(event, 'calorie')">Calorie Calculator</button>
+            <button class="tab-button" onclick="openTab(event, 'bmi')">BMI Calculator</button>
+            <button class="tab-button" onclick="openTab(event, 'burned')">Calories Burned</button>
+            <button class="tab-button" onclick="openTab(event, 'macro')">Macro Calculator</button>
+        </div>
+
+        <div id="calorie" class="tab-content active">
+            <h1>Calorie Calculator</h1>
+            <form id="calorie-form">
+                <div class="input-group">
+                    <label for="age">Age</label>
+                    <input type="number" id="age" min="1" required>
+                </div>
+                <div class="input-group">
+                    <label for="gender">Gender</label>
+                    <select id="gender" required>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="weight">Weight (kg)</label>
+                    <input type="number" id="weight" min="1" step="0.1" required>
+                </div>
+                <div class="input-group">
+                    <label for="height">Height (cm)</label>
+                    <input type="number" id="height" min="1" required>
+                </div>
+                <div class="input-group">
+                    <label for="activity">Activity Level</label>
+                    <select id="activity" required>
+                        <option value="1.2">Sedentary (little or no exercise)</option>
+                        <option value="1.375">Lightly Active (1-3 days/week)</option>
+                        <option value="1.55">Moderately Active (3-5 days/week)</option>
+                        <option value="1.725">Very Active (6-7 days/week)</option>
+                        <option value="1.9">Extra Active (very hard exercise)</option>
+                    </select>
+                </div>
+                <button type="submit">Calculate Calories</button>
+            </form>
+            <div id="calorie-result" class="result-container">
+                <div id="calorie-loading" class="loading-spinner" style="display:none;"></div>
+            </div>
+        </div>
+
+        <div id="bmi" class="tab-content" style="display:none;">
+            <h1>BMI Calculator</h1>
+            <form id="bmi-form">
+                <div class="input-group">
+                    <label for="bmi-weight">Weight (kg)</label>
+                    <input type="number" id="bmi-weight" min="1" step="0.1" required>
+                </div>
+                <div class="input-group">
+                    <label for="bmi-height">Height (cm)</label>
+                    <input type="number" id="bmi-height" min="1" required>
+                </div>
+                <button type="submit">Calculate BMI</button>
+            </form>
+            <div id="bmi-result" class="result-container">
+                <div id="bmi-loading" class="loading-spinner" style="display:none;"></div>
+            </div>
+            <div class="chart-container">
+                <canvas id="bmiChart"></canvas>
+            </div>
+        </div>
+
+        <div id="burned" class="tab-content" style="display:none;">
+            <h1>Calories Burned</h1>
+            <form id="burned-form">
+            <fieldset>
+                <legend>Your Details</legend>
+                <div class="input-group">
+                    <label for="burned-weight">Weight (kg)</label>
+                    <input type="number" id="burned-weight" min="1" step="0.1" required>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Exercise Details</legend>
+                <div class="input-group">
+                    <label for="burned-activity-select">Choose Activity</label>
+                    <select id="burned-activity-select" required>
+                        <option value="3.5">Walking (moderate pace)</option>
+                        <option value="6.0">Jogging</option>
+                        <option value="8.0">Running (8 km/h)</option>
+                        <option value="7.0">Cycling (moderate)</option>
+                        <option value="5.0">Swimming (moderate)</option>
+                        <option value="3.0">Weight Lifting (general)</option>
+                        <option value="8.0">Jumping Rope</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="burned-duration">Duration (minutes)</label>
+                    <input type="number" id="burned-duration" min="1" required>
+                </div>
+            </fieldset>
+
+            <button type="submit">Calculate Calories Burned</button>
+        </form>
+            <div id="burned-result" class="result-container">
+                <div id="burned-loading" class="loading-spinner" style="display:none;"></div>
+            </div>
+        </div>
+
+        <div id="macro" class="tab-content" style="display:none;">
+            <h1>Macronutrient Calculator</h1>
+            <form id="macro-form">
+                <div class="input-group">
+                    <label for="tdee-input">Your Daily Calorie Needs (TDEE)</label>
+                    <input type="number" id="tdee-input" min="1" placeholder="Enter TDEE or use Calorie Calc." required>
+                </div>
+                <div class="slider-group">
+                    <label for="protein-ratio">Protein %</label>
+                    <input type="range" id="protein-ratio" min="10" max="60" value="30" oninput="updateMacroRatios(this)">
+                    <span id="protein-value">30%</span>
+                </div>
+                <div class="slider-group">
+                    <label for="carb-ratio">Carbohydrates %</label>
+                    <input type="range" id="carb-ratio" min="10" max="60" value="40" oninput="updateMacroRatios(this)">
+                    <span id="carb-value">40%</span>
+                </div>
+                <div class="slider-group">
+                    <label for="fat-ratio">Fats %</label>
+                    <input type="range" id="fat-ratio" min="10" max="60" value="30" oninput="updateMacroRatios(this)">
+                    <span id="fat-value">30%</span>
+                </div>
+                <button type="submit">Calculate Macros</button>
+            </form>
+            <div id="macro-result" class="result-container">
+            </div>
+            <div class="chart-container">
+                <canvas id="macroChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

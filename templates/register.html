@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="calculator-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flashes">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+        <h2>Register</h2>
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            <div class="input-group">{{ form.username.label }} {{ form.username(class="form-control") }}</div>
+            <div class="input-group">{{ form.password.label }} {{ form.password(class="form-control") }}</div>
+            <div class="input-group">{{ form.submit(class="btn btn-primary") }}</div>
+        </form>
+    </div>
+</body>
+</html>
