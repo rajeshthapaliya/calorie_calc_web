@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Profile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="calculator-container">
+        <h1>Edit Profile</h1>
+        <hr>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flashes">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST" enctype="multipart/form-data">
+            <div class="input-group">
+                <label for="profile_pic">Change Profile Picture:</label>
+                <input type="file" id="profile_pic" name="profile_pic" accept="image/*">
+            </div>
+            <div class="input-group">
+                <label for="bio">Bio:</label>
+                <textarea id="bio" name="bio" rows="4">{{ current_user.bio or '' }}</textarea>
+            </div>
+            <button type="submit">Update Profile</button>
+        </form>
+    </div>
+</body>
+</html>

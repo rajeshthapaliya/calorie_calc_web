@@ -10,7 +10,16 @@
 <body>
     <div class="calculator-container">
         <h1>Welcome, {{ user.username }}!</h1>
-        <a href="{{ url_for('home') }}">Go to Calculators</a> | <a href="{{ url_for('food_log') }}">Food Log</a> | <a href="{{ url_for('exercise_log') }}">Exercise Log</a> | <a href="{{ url_for('logout') }}">Logout</a>
+        <a href="{{ url_for('home') }}">Go to Calculators</a> | <a href="{{ url_for('food_log') }}">Food Log</a> | <a href="{{ url_for('exercise_log') }}">Exercise Log</a> | <a href="{{ url_for('weight_tracker') }}">Weight Tracker</a> | <a href="{{ url_for('logout') }}">Logout</a>
+        <hr>
+
+        <h2>Your Profile</h2>
+        <div class="profile-info">
+            <img src="{{ url_for('static', filename='profile_pics/' + user.profile_pic) }}" alt="Profile Picture" class="profile-pic">
+            <p><strong>Bio:</strong> {{ user.bio or "No bio set yet." }}</p>
+            <a href="{{ url_for('edit_profile') }}">Edit Profile</a>
+        </div>
+        
         <hr>
         <h2>Your Health Data History</h2>
         {% if history %}

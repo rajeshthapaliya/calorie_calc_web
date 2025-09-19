@@ -7,12 +7,15 @@ from wtforms.validators import InputRequired, Length, ValidationError
 from flask_migrate import Migrate
 from datetime import datetime
 from sqlalchemy import func
+from werkzeug.utils import secure_filename
+import os
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SECRET_KEY'] = 'thisisasecretkey'
+app.config['UPLOAD_FOLDER'] = 'static/profile_pics'
 db = SQLAlchemy(app)
-migrate = Migrate(app, db) # This line initializes Flask-Migrate
+migrate = Migrate(app, db)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -26,9 +29,12 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), nullable=False, unique=True)
     password = db.Column(db.String(80), nullable=False)
+    profile_pic = db.Column(db.String(255), nullable=True, default='default.jpg')
+    bio = db.Column(db.Text, nullable=True)
     health_data = db.relationship('UserHealthData', backref='owner', lazy=True)
     food_entries = db.relationship('FoodEntry', backref='owner', lazy=True)
     exercise_entries = db.relationship('ExerciseEntry', backref='owner', lazy=True)
+    weight_logs = db.relationship('WeightLog', backref='owner', lazy=True)
 
 class UserHealthData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -57,6 +63,12 @@ class ExerciseEntry(db.Model):
     duration_minutes = db.Column(db.Integer, nullable=True)
     calories_burned = db.Column(db.Integer, nullable=False)
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+class WeightLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    weight = db.Column(db.Float, nullable=False)
+    date_logged = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 class RegisterForm(FlaskForm):
@@ -318,9 +330,49 @@ def exercise_log():
         total_calories_burned=total_calories_burned
     )
 
+@app.route('/weight_tracker', methods=['GET', 'POST'])
+@login_required
+def weight_tracker():
+    if request.method == 'POST':
+        weight = request.form.get('weight')
+        if weight:
+            new_log = WeightLog(weight=float(weight), user_id=current_user.id)
+            db.session.add(new_log)
+            db.session.commit()
+            flash('Weight logged successfully!', 'success')
+        return redirect(url_for('weight_tracker'))
+
+    weight_history = WeightLog.query.filter_by(user_id=current_user.id).order_by(WeightLog.date_logged).all()
+    
+    dates = [log.date_logged.strftime('%Y-%m-%d') for log in weight_history]
+    weights = [log.weight for log in weight_history]
+    
+    return render_template('weight_tracker.html', dates=dates, weights=weights)
+
+
+@app.route('/edit_profile', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    if request.method == 'POST':
+        current_user.bio = request.form.get('bio')
+        
+        if 'profile_pic' in request.files:
+            file = request.files['profile_pic']
+            if file.filename != '':
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(file_path)
+                current_user.profile_pic = filename
+        
+        db.session.commit()
+        flash('Profile updated successfully!', 'success')
+        return redirect(url_for('profile'))
+
+    return render_template('edit_profile.html')
+
 if __name__ == '__main__':
+    if not os.path.exists('static/profile_pics'):
+        os.makedirs('static/profile_pics')
     with app.app_context():
-        # This is commented out to use Flask-Migrate instead
-        # db.create_all()
         pass
     app.run(debug=True)
